@@ -1,0 +1,565 @@
+<body>
+
+  <p>
+    <b>Bear Bibeault's Front Man&trade;</b> (called simply "Front Man" from here on) is an implementation
+    of the Front Controller and Command patterns that serves as an ultra-lightweight framework (if
+    you could call it that) for quickly creating web applications of all sizes.
+  </p>
+
+  <div id="frontmanDoc"><a name="FRONTMAN_DOC">&nbsp;</a>
+
+    <div id="toc">
+      <ul>
+        <li><a href="#SECTION_1_0">1.0 Purpose of Front Man</a></li>
+        <li>
+          <a href="#SECTION_2_0">2.0 Setting up Front Man</a>
+          <ul>
+            <li><a href="#SECTION_2_1">2.1 Add the Jar Files to the Application</a></li>
+            <li><a href="#SECTION_2_2">2.2 Set up the Deployment Descriptor</a></li>
+            <li>
+              <a href="#SECTION_2_3">2.3 Set Up Optional Mapping Properties Files</a>
+              <ul>
+                <li><a href="#SECTION_2_3_1">2.3.1 The Command Verbs Properties File</a></li>
+                <li><a href="#SECTION_2_3_2">2.3.2 The View Names Properties File</a></li>
+              </ul>
+            </li>
+            <li><a href="#SECTION_2_4">2.4 Write Your Command Classes</a></li>
+            <li><a href="#SECTION_2_5">2.5 Write Your View Pages</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#SECTION_3_0">3.0 Usage Notes and Tips</a>
+          <ul>
+            <li>
+              <a href="#SECTION_3_1">3.1 How Command Verbs are Mapped to Command Classes</a>
+              <ul>
+                <li><a href="#SECTION_3_1_1">3.1.1 Explicit Command Mapping Using a Properties File</a></li>
+                <li><a href="#SECTION_3_1_2">3.1.2 Explicit Command Mapping Using Java Annotations</a></li>
+                <li><a href="#SECTION_3_1_3">3.1.3 Implicit Command Mapping Using Class Names</a></li>
+              </ul>
+            </li>
+            <li><a href="#SECTION_3_2">3.2 Command Verb and View Name Name-spacing</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <a name="SECTION_1_0"><h1>1.0 Purpose of Front Man</h1></a>
+
+      <p>
+        The purpose of <b>Front Man</b> is to provide an ultra-lightweight web framework that adheres to the principle that
+        the answer to the question "How big should a web framework be?" is "Barely enough". It aims to provide the basic
+        plumbing for Model 2-patterned web applications while achieving the project goals of:
+        <ul>
+          <li>The API and usage is learnable within an hour.</li>
+          <li>Can be set up in minutes.</li>
+          <li>Reasonably self-contained; does not require a bunch of 3rd-party jar files in order to operate. The only dependency is to the Jakarta Commons Logging (which can be easily removed, if desired).</li>
+          <li>A tiny set of easily-understandable public classes and interfaces.</li>
+          <li>Servlet controllers and page views are referenced via abstracted naming (no Invoker-like class names in URLs, and no hard-coded file paths for JSP files).</li>
+          <li>Minimal configuration within web.xml.</li>
+          <li>Zero to minimal mapping configuration: your choice of "configuration by convention", Java annotations, or of more explicit control via simple properties files.</li>
+          <li>Minimal processing overhead per request.</li>
+          <li>No hiding or getting in the way of how the servlet API works.</li>
+          <li>Generally usable, but designed with Model 2 applications using scriptless JSP 2 pages in mind.</li>
+          <li>No required on-page impact: no required declarations, directives or tags.</li>
+          <li>No unnecessary bells and whistles.</li>
+        </ul>
+      </p>
+    </div>
+
+    <div class="section">
+      <a name="SECTION_2_0"><h1>2.0 Setting up Front Man</h1></a>
+
+      <p>
+        Overview of set up steps:
+        <ol>
+          <li>Drop the Front Man jar file into your application's <code>WEB-INF/lib</code> folder.</li>
+          <li>Grab the <a href="http://commons.apache.org/logging/" target="_blank">Jakarta Commons Logging</a> jar file and drop it into <code>WEB-INF/lib</code>.</li>
+          <li>Add the <tt>&lt;servlet&gt;</tt> and <tt>&lt;servlet-mapping&gt;</tt> entries for the Command Broker servlet in the deployment descriptor (<code>web.xml</code>).</li>
+          <li>Optionally, create properties files to define explicit mappings for the command verbs and view names respectively.</li>
+          <li>Start writing your pages and commands!</li>
+        </ol>
+      </p>
+
+      <p>Let's take a look at each of these steps in detail.</p>
+
+      <div class="section">
+        <a name="SECTION_2_1"><h2>2.1 Add the Jar Files to the Applications</h2></a>
+
+        <p>
+          Once you have obtained the <code>frontman-1.6.1.jar</code> file, just drop it into your web application's
+          <code>WEB-INF/lib</code> folder.
+        </p>
+
+        <p>
+          The only other jar file necessary jar is Jakarta Commons Logging. This allows the logging performed
+          by Front Man to hook into either
+          <a href="http://logging.apache.org/log4j/1.2/index.html" target="_blank">Log4J</a> or the
+          <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/logging/package-summary.html" target="_blank">java.util.logging package</a>
+          as defined by your web app. Obtain this jar from
+          <a href="http://commons.apache.org/logging/">the Jakarta Project site</a>.
+        </p>
+      </div>
+
+      <div class="section">
+        <a name="SECTION_2_2"><h2>2.2 Set up the Deployment Descriptor</h2></a>
+
+        <p>
+          The Front Man front controller, the <code>CommandBroker</code> class, must be established as a servlet in the
+          deployment descriptor, and mapped to an appropriate URL pattern. Initialization parameters specify how
+          command verbs are mapped to their corresponding command classes, and how view names are mapped to the path
+          of their view resources. These initialization parameters are defined as:
+          <table class="inline" cellspacing="1">
+            <tr>
+              <th>Init Param Name</th>
+              <th>Description</th>
+            </tr>
+            <tr>
+              <td><tt>commandsPath</tt></td>
+              <td>
+                <p>
+                  Defines the root path at which to automatically search for command classes with
+                  the <tt>@FrontmanCommand()</tt> annotation, or when employing implicit command mapping
+                  by convention (command mapping is explained in detail in
+                  <a href="#SECTION_3_1">Section 3.1</a>.
+                </p>
+                <p>
+                  This parameter can be omitted only if a <tt>commandVerbsProperties</tt> parameter is specified.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td><tt>viewsPath</tt></td>
+              <td>
+                <p>
+                  Defines the root path at which to search for view resources relative to the context root.
+                  The full path for the resource is created by appending a slash followed by the view name,
+                  followed by the string ".jsp".
+                </p>
+                <p>
+                  For example, if the <tt>viewsPath</tt> is defined as <tt>/WEB-INF/pages</tt>, a view name of
+                  <tt>something</tt> would be mapped to a path of <tt>/WEB-INF/pages/something.jsp</tt>, while
+                  a view name of <tt>xyz/hello</tt> would map to <tt>/WEB-INF/pages/xyz/hello.jsp</tt>.
+                </p>
+                <p>
+                  Note that this implicit mapping is attempted only if no explicit mapping for the views names is
+                  found in a properties bundle defined by <tt>viewNamesproperties</tt>.
+                </p>
+                <p>This parameter is optional.</p>
+              </td>
+            </tr>
+            <tr>
+              <td><tt>commandVerbsProperties</tt></td>
+              <td>
+                <p>
+                  Defines the context-relative location of a properties file that contains explicit
+                  command verb to Command class name mappings.
+                </p>
+                <p>This parameter is optional if a <tt>commandsPath</tt> parameter is provided.</p>
+              </td>
+            </tr>
+            <tr>
+              <td><tt>viewNamesProperties</tt></td>
+              <td>
+                <p>
+                  Defines the context-relative location of a properties file that contains
+                  explicit view name to view resource path mappings.
+                </p>
+                <p>
+                  This parameter is optional. Note that if neither of a <tt>viewNamesProperties</tt>
+                  or <tt>viewsPath</tt> parameter is specified, view names cannot be used and all
+                  views need to be referenced by explicit URL. It is highly recommended to use view
+                  names.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </p>
+        <p>
+          A typical such declaration might look like:
+          <pre>
+&lt;servlet&gt;
+  &lt;servlet-name&gt;CommandBroker&lt;/servlet-name&gt;
+  &lt;servlet-class&gt;org.bibeault.frontman.CommandBroker&lt;/servlet-class&gt;
+  &lt;init-param&gt;
+    &lt;param-name&gt;commandsPath&lt;/param-name&gt;
+    &lt;param-value&gt;com.mydomain.projectname.commands&lt;/param-value&gt;
+  &lt;/init-param&gt;
+  &lt;init-param&gt;
+    &lt;param-name&gt;viewsPath&lt;/param-name&gt;
+    &lt;param-value&gt;/WEB-INF/pages&lt;/param-value&gt;
+  &lt;/init-param&gt;
+  &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
+&lt;/servlet&gt;
+          </pre>
+        </p>
+        <p>Another possibility:
+          <pre>
+&lt;servlet&gt;
+  &lt;servlet-name&gt;CommandBroker&lt;/servlet-name&gt;
+  &lt;servlet-class&gt;org.bibeault.frontman.CommandBroker&lt;/servlet-class&gt;
+  &lt;init-param&gt;
+    &lt;param-name&gt;commandVerbsProperties&lt;/param-name&gt;
+    &lt;param-value&gt;/WEB-INF/command.verbs.properties&lt;/param-value&gt;
+  &lt;/init-param&gt;
+  &lt;init-param&gt;
+    &lt;param-name&gt;viewNamesProperties&lt;/param-name&gt;
+    &lt;param-value&gt;/WEB-INF/view.names.properties&lt;/param-value&gt;
+  &lt;/init-param&gt;
+  &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
+&lt;/servlet&gt;
+          </pre>
+        </p>
+        <p>
+          The optional <b><code>commandVerbsProperties</code></b> and <b><code>viewNamesProperties</code></b> init
+          parameters can be used to specify the path where the mapping property files can be found. These path
+          values must begin with "/" and are referenced relative to the context root.
+        </p>
+
+        <p>
+          The servlet mapping for this controller is typically along the lines of:
+          <pre>
+&lt;servlet-mapping&gt;
+  &lt;servlet-name&gt;CommandBroker&lt;/servlet-name&gt;
+  &lt;url-pattern&gt;/command/*&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;
+          </pre>
+        </p>
+
+        <p>
+          The <code>command</code> prefix to this mapping can be any word you would like,
+          but the pattern for the mapping must be as shown. Use of the conventional prefix
+          <code>command</code> is highly recommended unless it would cause a conflict with a URL
+          pattern that you are not at liberty to change.
+        </p>
+
+        <p>
+          This mapping establishes URLs to the various commands you will define as:
+          <pre>
+  http://yourserver.com/contextPath/command/commandVerb
+          </pre>
+          where:
+          <ul>
+            <li><code>yourserver.com</code> is the domain name for your server.</li>
+            <li><code>contextPath</code> is the context path established for your application.</li>
+            <li><code>commandVerb</code> is the verb for a command.</li>
+          </ul>
+        </p>
+        <p>
+          As an example, let's say that you have defined a command verb such as <code>doSomethingWonderful</code>
+          in your properties file, the URL to execute that command would be:
+          <pre>
+  http://yourserver.com/contextPath/command/doSomethingWonderful
+          </pre>
+        </p>
+      </div>
+
+      <div class="section">
+        <a name="SECTION_2_3"><h2>2.3 Set Up Optional Mapping Properties Files</h2></a>
+
+        <p>
+          The optional configuration files that map command class names to their verbs, and view
+          names to their resource URLs, are refreshingly simple. They are merely run-of-the-mill
+          Java properties files.
+        </p>
+
+        <div class="section">
+          <a name="SECTION_2_3_1"><h3>2.3.1 The Command Verbs Properties File</h3></a>
+
+          <p>
+            The Command Verbs Properties File is used to explicitly associate command verbs with the
+            command classes that should be executed when that verb is used in a URL to the Front Man
+            command broker servlet. This file is identified to the system via the optional
+            <code>commandVerbsProperties</code> init parameter to that servlet.
+          </p>
+
+          <p>
+            The properties defined in this file map command verbs to the names of the classes, each
+            implementing the {@link org.bibeault.frontman.Command} interface, that will be invoked
+            when that verb is specified in a URL. A typical entry might look like:
+            <pre>
+  doSomethingWonderful=com.whatever.someproject.commands.DoSomethingWonderfulCommand</pre>
+          </p>
+
+          <p>
+            A useful convention is for command verbs to start with a lowercase character, and a verb
+            that describes the action to be taken by the command.
+          </p>
+
+          <p>
+            See <a href="#SECTION_3_1">Section 3.1</a> for details on how commands verbs
+            are mapped to their respective Command classes.
+          </p>
+        </div>
+
+        <div class="section">
+          <a name="SECTION_2_3_2"><h3>2.3.2 The View Names Properties File</h3></a>
+
+          <p>
+            The View Names Properties File is used to associate view names with the context-relative URLs that locate the resource
+            (usually a JSP or HTML file) invoked when the view name is referenced. This file is identified to the system via
+            the <code>viewNamesProperties</code> init parameter to the command broker servlet.
+          </p>
+
+          <p>
+            View names are most often referenced from within commands as the target of a forward or redirect operation. By
+            abstracting the view names from their physical location, changes in the view resource hierarchy will not require
+            any changes to the code as physical URLs are not used to reference the resources.
+          </p>
+
+          <p>
+            Within the properties file, each entry associates a view name with the location of the named resource. Some typical
+            entries in this properties file could be:
+            <pre>
+  ErrorPage=/errors.jsp
+  HomePage=/WEB-INF/pages/home.jsp
+  LoginPage=/WEB-INF/pages/login.jsp
+  ProfileEntryForm=/WEB-INF/pages/profile.entry.jsp
+            </pre>
+          </p>
+
+          <p>
+            As with command verbs, a recommended convention has been established that seems to help keep things tidy:
+            <ul>
+              <li>View names should start with an uppercase character and be a grammatical noun; typically a compound noun that
+              uniquely identifies the resource.</li>
+              <li>Typical suffixes like "Page" or "Form" help to clearly indicate the usage of the resource by inspection.</li>
+            </ul>
+          </p>
+
+          <p>
+            Note that in this example most of the pages are hidden in the folder hierarchy under the <code>WEB-INF</code>
+            folder. This is typical of Model 2 web applications where is it highly unusual to visit a view without first going
+            through a controller. Placing the JSP files under <code>WEB-INF</code> prevents any direct access via URL.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="section">
+        <a name="SECTION_2_4"><h2>2.4 Write Your Command Classes</h2></a>
+
+        <p>
+          That's all there is to the setup. You are now ready to start writing your application, particularly the command classes.
+        </p>
+
+        <p>
+          All commands must implement the {@link org.bibeault.frontman.Command} interface which consists of a single method to be
+          called when the Command is to perform its function:
+          <pre>
+  public void execute( CommandContext commandContext ) throws ServletException, IOException;</pre>
+        </p>
+        <p>A context object of type {@link org.bibeault.frontman.CommandContext} is passed to this
+          method which not only gives the method access to its environment, it provides a bevy of useful methods that the
+          Command can take advantage of; methods to easily forward or redirect to other Commands or views via their abstracted names,
+          for example.
+        </p>
+      </div>
+
+      <div class="section">
+        <a name="SECTION_2_5"><h2>2.5 Write Your View Pages</h2></a>
+
+        <p>
+          Go ahead and write your JSP pages. There is no <i>required</i> "goo" that you must put on the pages in order for
+          them to work. No required tags. No required declarations. No required directives.
+        </p>
+
+        <p>
+          The use of JSP scriptless pages that employ the EL and JSTL to best advantage is highly recommended.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="section">
+      <a name="SECTION_3_0"><h1>3.0 Usage Notes and Tips</h1></a>
+
+      <p>
+        These sections contain information on how Front Man works as well as various tips and tricks
+        that you can use to take best advantage of Front Man.
+      </p>
+
+      <div class="section">
+        <a name="SECTION_3_1"><h2>3.1 How Command Verbs are Mapped to Command Classes</h2></a>
+
+        <p>
+          Front Man gives you three choices regarding how command verbs in the URL are
+          mapped to their respective command classes. You can choose whichever means best suits
+          your project and programming style, and you can even use all three approaches within
+          the same web application.
+        </p>
+
+        <p>
+          The three approaches, in order of precedence from highest to lowest are:
+          <ol>
+            <li>Explicit mappings in a command verbs properties file</li>
+            <li>Explicit Java annotations on the command classes</li>
+            <li>Implicit mapping by class name</li>
+          </ol>
+          Each of these approaches is described in the following sections
+        </p>
+
+        <div class="section">
+          <a name="SECTION_3_1_1"><h3>3.1.1 Explicit Command Mapping Using a Properties File</h3></a>
+
+          <p>
+            Within the properties file, each entry associates a command verb with the class name of the
+            concrete command class that is to be executed for that verb. Some typical entries in this
+            properties file could be:
+            <pre>
+  doSomethingWonderful=com.whatever.someproject.commands.DoSomethingWonderfulCommand
+  login=com.whatever.someproject.commands.LoginCommand
+  viewHomePage=com.whatever.someproject.commands.ViewHomePageCommand
+  viewLoginPage=com.whatever.someproject.commands.ViewLoginPageCommand
+            </pre>
+          </p>
+
+          <p>
+            Note the naming patterns used for command verbs and for the corresponding command classes. It is highly recommended to
+            follow these conventions as it has proved to keep URLs and command code as readable and understandable as possible.
+            Notably:
+            <ul>
+              <li>Command verbs should start with a grammatical verb and a lowercase character. The remainder of the name uses
+              typical Java "camel case" and should adhere to the rules for Java identifiers.</li>
+              <li>Command class names should be the same as the command verb with the first character upper-cased and the suffix
+                "Command" added.</li>
+            </ul>
+            You are, of course, free to come up with your own conventions, but time and usage has proved that the above simple
+            conventions keep things tidy and understandable.
+          </p>
+
+          <p>
+            These mappings take precedence over Command class annotations and any implied mapping.
+          </p>
+        </div>
+
+        <div class="section">
+          <a name="SECTION_3_1_2"><h3>3.1.2 Explicit Command Mapping Using Java Annotations</h3></a>
+
+          <p>
+            For those that don't wish to use external properties files to associate command verbs to Command classes,
+            Front Man defines a Java annotation that can be used to directly associate a Command class with a command
+            verb directly in the code for the Command class.
+          </p>
+
+          <p>
+            This annotation is <tt>@FrontmanCommand()</tt> and it takes a single text value that defines the
+            command verb to be associated with the Command class.
+          </p>
+
+          <p>
+            For example, if we defined a Command class named MyWonderfulCommand, and wished for it to be
+            invoked via command verb <tt>doSomethingWonderful</tt>, we would write:
+            <pre>
+          &#64;FrontmanCommand("doSomethingWonderful")
+          public class MyWonderfulCommand implements Command {
+            </pre>
+          </p>
+
+          <p>
+            Note that only classes that implement the {@link org.bibeault.frontman.Command} interface and
+            are in the classpath hierarchy identified by the <tt>commandsPath</tt> init parameter will be
+            considered for command mappings.
+          </p>
+
+          <p>
+            Any duplicate mappings between the annotations and those defined in a command
+            mapping properties file will resolve to the mapping specified in the properties file.
+          </p>
+
+        </div>
+
+        <div class="section">
+          <a name="SECTION_3_1_3"><h3>3.1.3 Implicit Command Mappings by Class Name</h3></a>
+
+          <p>
+            Another means to map command verbs to their respective Command classes is to allow
+            Front Man to surmise the name of the command class from the command verb itself.
+          </p>
+
+          <p>
+            In this approach, the command class is located relative to the path provided in the <tt>commandsPath</tt>
+            init parameter.
+          </p>
+
+          <p>
+            The full class name for the command is created by concatenating the following values:
+            <ul>
+              <li>the value of <tt>commandsPath</tt></li>
+              <li>a period character</li>
+              <li>the command verb with first character uppercased</li>
+              <li>the string <tt>Command</tt></li>
+            </ul>
+          </p>
+
+          <p>
+            For example, if the <tt>commandsPath</tt> is defined as <tt>org.something.commands</tt>,
+            a command verb of <tt>doSomething</tt> would be mapped to a command class name of
+            <tt>org.something.commands.DoSomethingCommand</tt>, while a command verb of <tt>xyz.sayHello</tt>
+            would map to <tt>org.something.commands.xyz.SayHelloCommand</tt>.
+          </p>
+
+          <p>
+            Note that this implicit mapping is attempted only if no explicit mapping for the command
+            verb is found in an explicit property or annotation mapping.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <a name="SECTION_3_2"><h2>3.2 Command Verb and View Name Name-spacing</h2></a>
+
+        <p>
+          In some projects it may make sense to namespace the command verbs in the project.
+          This can easily be performed by adding a namespace suffix to the verb or name and using the period
+          character as a separator.
+        </p>
+
+        <p>
+          An example where such segregation is useful might be a web application that requires authentication.
+          Most pages in the application require a logged-in user, but obviously some pages and commands, such
+          as the login form itself, should not require a logged-in user. Commands and views exempt from authentication
+          could belong to one namespace, and commands and views requiring authentication to others.
+        </p>
+
+        <p>
+          It would then be a simple matter to write a servlet filter that would use the namespace to determine
+          if the command being invoked requires authentication or not by looking at the namespace.
+        </p>
+
+        <p>
+          There are many other situations in which name-spacing your command verbs and view names might be useful.
+          It's a handy tip that can make your code and life simpler.
+        </p>
+
+        <p>
+          When explicitly defining command verb mappings (or view names) within a properties file or via
+          Java annotations, it's a simple matter to simply include the namespace as part of the verb; for example:
+          <tt>login.viewLoginPage</tt>, <tt>core.subsystem.doSomethingWonderful</tt> or <tt>commerce.ShoppingCartView</tt>.
+          In these case, the period characters are not significant and are just part of the mapping key.
+        </p>
+
+        <p>
+          When using the implicit command mapping by class name approach, however, the period character and the namespace
+          names are significant in that they represent the package structure of the command class relative to
+          the path defined by the <tt>commandsPath</tt> init parameter. For example, a command verb of
+          <tt>core.subsystem.doSomethingWonderful</tt> would implicitly map to a class name of
+          <tt>core.subsystem.DoSomethingWonderfulCommand</tt> relative to the package defined by <tt>commandsPath</tt>.
+        </p>
+
+        <p>
+          View names can use the folder structure for name-spacing using the slash (/) character as a spearator.
+          The implicit mapping of such name-spaced views represent the folder structure where the
+          corresponding JSP is located. For example, a view name of <tt>core/commerce.details</tt> would implicitly
+          map to the file <tt>core/commerce.details.jsp</tt> relative to the folder specified by the
+          <tt>viewsPath</tt> init parameter.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
