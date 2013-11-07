@@ -7,11 +7,11 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-import lombok.extern.slf4j.Slf4j;
-
 import org.eclipse.jetty.server.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Thread qui écoute sur un port prédéterminé pour déclencher l'arrêt du serveur
@@ -21,10 +21,10 @@ import org.eclipse.jetty.server.Server;
  * serveur. lorsque cette serverSocket est contactée, le server jetty est arrêté
  * dans le délai de grace communiqué, et la jvm est arrêtée.
  */
-@Slf4j
 class StopMonitor extends Thread {
-   private final ServerSocket socket;
-   private final Server       server;
+   private static final Logger log = LoggerFactory.getLogger(StopMonitor.class);
+   private final ServerSocket  socket;
+   private final Server        server;
 
    StopMonitor(Server server, int port) {
       setDaemon(true);

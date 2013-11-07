@@ -2,23 +2,12 @@
 <ivy-module version="2.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
-  <info organisation="com.tsquare" module="commun" />
+  <info organisation="net.barroux" module="commun" />
 
-  <configurations defaultconfmapping="*->default">
-    <conf name="default" description="Configuration normale pour le runtime" />
-    <conf name="test" description="Configuration pour les tests unitaires" />
-  </configurations>
   <dependencies>
-    <dependency org="javax.servlet" name="javax.servlet-api" rev="3.0.1"/>
     <dependency org="javax.servlet" name="jstl" rev="1.2"/>
-    <dependency org="org.eclipse.jetty" name="jetty-server" rev="9.1.0.RC1"/>
     <dependency org="org.eclipse.jetty" name="jetty-webapp" rev="9.1.0.RC1"/>
   	<dependency org="org.eclipse.jetty" name="jetty-jsp" rev="9.1.0.RC1"/>
-    <!-- Apache Commons -->
-
-    <!-- Misc -->
-    <dependency org="org.projectlombok" name="lombok" rev="0.11.8" />
     <dependency org="org.slf4j" name="slf4j-api" rev="1.7.5"/>
-    <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.7.2" />
   </dependencies>
 </ivy-module>

@@ -1,26 +1,33 @@
 package net.barroux.ezserver;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.bibeault.frontman.CommandBroker;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Main class for EzServer with Frontman framework.
  * 
  * Exemple usage :
  * {@code new EzServer("net.bx.commands").port(7777).context("myapp").start();}
+ * 
+ * Note that starting a server will trigger the shutdown of any other server
+ * running on the same port. This is handy for quickly simulate a server
+ * "restart"
+ * 
+ * The frontman commandBroker is mapped on "/cmd/*" urls.
  */
-@Slf4j
+
 public class EzServer {
-   private final String commandsPath;
-   private int          port       = 8765;
-   private String       context    = "";
-   private String       webContent = "WebContent";
-   private String       classesDir = "build/bin";
-   private String       viewsPath  = "/WEB-INF/jsp";
+   private static final Logger log        = LoggerFactory.getLogger(EzServer.class);
+   private final String        commandsPath;
+   private int                 port       = 8765;
+   private String              context    = "";
+   private String              webContent = "WebContent";
+   private String              classesDir = "build/bin";
+   private String              viewsPath  = "/WEB-INF/jsp";
 
    /**
     * Initializing an EzServer with the only parameter without default.

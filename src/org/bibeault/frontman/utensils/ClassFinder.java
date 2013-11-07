@@ -38,10 +38,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import lombok.extern.slf4j.Slf4j;
+import org.bibeault.frontman.CommandBroker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class ClassFinder {
+   private static final Logger log = LoggerFactory.getLogger(ClassFinder.class);
 
    public static List<Class> findClassesIn(String packageName) throws Exception {
       //

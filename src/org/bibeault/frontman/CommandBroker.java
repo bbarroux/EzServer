@@ -42,9 +42,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.bibeault.frontman.utensils.ClassFinder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A simple Front Controller using a simple "configuration by convention"
@@ -68,8 +68,8 @@ import org.bibeault.frontman.utensils.ClassFinder;
  * </ol>
  * </p>
  */
-@Slf4j
 public class CommandBroker extends HttpServlet {
+   private static final Logger log                                 = LoggerFactory.getLogger(CommandBroker.class);
 
    private static final String INIT_PARAM_COMMANDS_ROOT            = "commandsPath";
    private static final String INIT_PARAM_VIEWS_ROOT               = "viewsPath";
