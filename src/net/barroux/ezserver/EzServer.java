@@ -1,5 +1,11 @@
 package net.barroux.ezserver;
 
+import java.util.EnumSet;
+
+import javax.servlet.DispatcherType;
+
+import net.barroux.ezserver.filters.LogRequestFilter;
+
 import org.bibeault.frontman.CommandBroker;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -88,8 +94,10 @@ public class EzServer {
       ServletHolder cmdBroker = new ServletHolder("CommandBroker", CommandBroker.class);
       cmdBroker.setInitParameter("commandsPath", commandsPath);
       cmdBroker.setInitParameter("viewsPath", viewsPath);
+
       app.addServlet(cmdBroker, "/cmd/*");
       app.setExtraClasspath(classesDir);
+      app.addFilter(LogRequestFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
       server.setHandler(app);
       StopMonitor.sendStopCommand(port, 2000);
       new StopMonitor(server, port).start();

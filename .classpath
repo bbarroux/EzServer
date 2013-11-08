@@ -2,6 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="con" path="org.apache.ivyde.eclipse.cpcontainer.IVYDE_CONTAINER/?project=EzServer&amp;ivyXmlPath=ivy.xml&amp;confs=default"/>
+	<classpathentry exported="true" kind="con" path="org.apache.ivyde.eclipse.cpcontainer.IVYDE_CONTAINER/?project=EzServer&amp;ivyXmlPath=ivy.xml&amp;confs=default"/>
 	<classpathentry kind="output" path="build/bin"/>
 </classpath>
