@@ -20,6 +20,7 @@ public class LogRequestFilter implements Filter {
 
    @Override
    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+      log.trace("entering");
       int reqNr = COUNTER.incrementAndGet();
       final long deb = System.currentTimeMillis();
       final HttpServletRequest req = (HttpServletRequest) request;
