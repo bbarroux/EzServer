@@ -7,6 +7,8 @@ import javax.servlet.DispatcherType;
 import net.barroux.ezserver.db.DbConfig;
 import net.barroux.ezserver.db.DbHelper;
 import net.barroux.ezserver.filters.LogRequestFilter;
+import net.barroux.ezserver.filters.SentryFilter;
+import net.barroux.ezserver.filters.SentryFilter.Identifier;
 import net.barroux.ezserver.filters.TransactionFilter;
 
 import org.bibeault.frontman.CommandBroker;
@@ -38,6 +40,7 @@ public class EzServer {
 	private String classesDir = "build/bin";
 	private String viewsPath = "/WEB-INF/jsp";
 	private DbConfig dbConfig;
+	private Identifier identifier;
 
 	/**
 	 * Initializing an EzServer with the only parameter without default.
@@ -98,6 +101,14 @@ public class EzServer {
 		return this;
 	}
 
+	/**
+	 * Fluent setter for sentry identifier.
+	 */
+	public EzServer identifier(Identifier identifier) {
+		this.identifier = identifier;
+		return this;
+	}
+
 	public void start() throws Exception {
 		log.info("preparing server start on port {} ", port);
 		Server server = new Server(port);
@@ -115,8 +126,13 @@ public class EzServer {
 		app.addFilter(LogRequestFilter.class, "/*", dts);
 		if (dbConfig != null) {
 			DbHelper.init(dbConfig);
-			app.addFilter(TransactionFilter.class, "/*", dts);
+			app.addFilter(TransactionFilter.class, "/cmd/*", dts);
 		}
+		if (identifier != null) {
+			app.setAttribute("identifier", identifier);
+			app.addFilter(SentryFilter.class, "/cmd/*", dts);
+		}
+
 		server.setHandler(app);
 		StopMonitor.sendStopCommand(port, 2000);
 		new StopMonitor(server, port).start();
@@ -124,4 +140,5 @@ public class EzServer {
 		server.start();
 		log.info("Server started");
 	}
+
 }
