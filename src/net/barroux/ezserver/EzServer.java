@@ -120,7 +120,7 @@ public class EzServer {
 		server.setHandler(app);
 		StopMonitor.sendStopCommand(port, 2000);
 		new StopMonitor(server, port).start();
-		// initDb();
+
 		server.start();
 		log.info("Server started");
 	}

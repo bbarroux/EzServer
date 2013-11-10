@@ -34,8 +34,7 @@ class StopMonitor extends Thread {
 		setName("StopMonitor");
 		this.server = server;
 		try {
-			this.socket = new ServerSocket(port + 100, 1,
-			    InetAddress.getByName("127.0.0.1"));
+			this.socket = new ServerSocket(port + 100, 1, InetAddress.getByName("127.0.0.1"));
 		} catch (IOException e) {
 			log.error("Could not initialize StopMonitor", e);
 			throw new RuntimeException(e);
@@ -45,7 +44,6 @@ class StopMonitor extends Thread {
 	@Override
 	public void run() {
 		try {
-
 			log.debug("StopMonitor ready and waiting for orders");
 			// Blocking method. l'exécution est stoppée ci-dessous tant que
 			// personne ne parle sur la socket
