@@ -114,6 +114,7 @@ public class EzServer {
 		Server server = new Server(port);
 
 		WebAppContext app = new WebAppContext(webContent + "/", "/" + context);
+		app.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
 		ServletHolder cmdBroker = new ServletHolder("CommandBroker",
 		    CommandBroker.class);
 		cmdBroker.setInitParameter("commandsPath", commandsPath);
