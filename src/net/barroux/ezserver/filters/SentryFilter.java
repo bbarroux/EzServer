@@ -1,6 +1,8 @@
 package net.barroux.ezserver.filters;
 
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -14,6 +16,8 @@ import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.io.BaseEncoding;
 
 public class SentryFilter implements Filter {
 	private static final Logger log = LoggerFactory.getLogger(SentryFilter.class);
@@ -31,12 +35,14 @@ public class SentryFilter implements Filter {
 			if (user != null) {
 				log.debug("User authenticated");
 				req.getSession(true).setAttribute("user", user);
+				((HttpServletResponse) response).sendRedirect(req.getRequestURI());
+			}
+			else {
+				log.warn("Unauthenticated access ");
+				((HttpServletResponse) response).sendRedirect("/");
 			}
 		}
-		if (user == null) {
-			log.warn("Unauthenticated access ");
-			((HttpServletResponse) response).sendRedirect("/");
-		}
+
 		else {
 			chain.doFilter(request, response);
 		}
@@ -50,7 +56,7 @@ public class SentryFilter implements Filter {
 		if (login == null || password == null)
 			return null;
 		log.debug("Authenticating user {}", login);
-		String hashedPassword = password;
+		String hashedPassword = hash(login, password);
 		return identifier.identify(login, hashedPassword);
 	}
 
@@ -67,4 +73,15 @@ public class SentryFilter implements Filter {
 		public Object identify(String login, String hashedPassword);
 	}
 
+	private static String hash(final String login, final String password) {
+		try {
+			final MessageDigest digest = MessageDigest.getInstance("SHA-512");
+			final byte[] pwd = digest.digest((login + password).getBytes());
+			String hashed = BaseEncoding.base64().encode(pwd);
+			return hashed;
+		} catch (final NoSuchAlgorithmException e) {
+			log.error("Could not get MessageDigest", e);
+			throw new RuntimeException("Could not get MessageDigest", e);
+		}
+	}
 }
