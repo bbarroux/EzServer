@@ -6,6 +6,8 @@ import org.jooq.Converter;
 
 public class JodaConverter implements Converter<Timestamp, DateTime> {
 
+	private static final long serialVersionUID = 1L;
+
 	@Override
 	public DateTime from(Timestamp databaseObject) {
 		return (databaseObject == null) ? null : new DateTime(databaseObject.getTime());

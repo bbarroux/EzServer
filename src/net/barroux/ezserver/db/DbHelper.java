@@ -1,14 +1,9 @@
 package net.barroux.ezserver.db;
 
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-
-import javax.sql.DataSource;
 
 import org.apache.commons.dbutils.DbUtils;
-import org.apache.commons.dbutils.QueryRunner;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConnectionProvider;
@@ -84,7 +79,7 @@ public class DbHelper {
 			conn.setAutoCommit(false);
 			CONNECTIONS.set(conn);
 			long elapsed = (System.nanoTime() - deb) / 1000;
-			log.debug("new connection initialized for thread {}µs", elapsed);
+			log.debug("new connection initialized for thread {}ï¿½s", elapsed);
 			return conn;
 		} catch (SQLException e) {
 			throw new DbException("Could not get connection from pool", e);
