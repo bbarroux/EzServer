@@ -17,7 +17,8 @@
     <dependency org="com.jolbox" name="bonecp" rev="0.8.0.RELEASE"/>
     <dependency org="org.postgresql" name="postgresql" rev="9.2-1003-jdbc4"/>
     <dependency org="org.jooq" name="jooq-codegen" rev="3.2.0"/>
-    <dependency org="commons-dbutils" name="commons-dbutils" rev="1.5" />
+    <dependency org="commons-lang" name="commons-lang" rev="2.6" />
+    <dependency org="commons-dbutils" name="commons-dbutils" rev="1.6" />
     <dependency org="joda-time" name="joda-time" rev="2.3"/>
     
   </dependencies>

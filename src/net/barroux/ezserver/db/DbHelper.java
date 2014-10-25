@@ -1,9 +1,14 @@
 package net.barroux.ezserver.db;
 
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+
+import javax.sql.DataSource;
 
 import org.apache.commons.dbutils.DbUtils;
+import org.apache.commons.dbutils.QueryRunner;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConnectionProvider;
@@ -13,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import com.jolbox.bonecp.BoneCP;
 
 public class DbHelper {
+	private static final ThreadLocal<Connection> CONNECTIONS = new ThreadLocal<>();
 	private static final ThreadLocal<DSLContext> CTXS = new ThreadLocal<>();
 	private static final Logger log = LoggerFactory.getLogger(DbHelper.class);
 	private static BoneCP POOL;
@@ -33,35 +39,26 @@ public class DbHelper {
 		}
 	}
 
-	private static DefaultConnectionProvider getCp() {
-		DSLContext ctx = CTXS.get();
-		if (ctx == null)
-			return null;
-		return (DefaultConnectionProvider) ctx.configuration().connectionProvider();
-	}
-
 	public static void commit() {
-		DefaultConnectionProvider conn = getCp();
-		if (conn != null) {
-			log.debug("committing transaction");
-			conn.commit();
+		try {
+			CONNECTIONS.get().commit();
+		} catch (SQLException e) {
+			throw new DbException("Could not commit", e);
 		}
 	}
 
 	public static void rollback() {
-		DefaultConnectionProvider conn = getCp();
-		if (conn != null) {
-			log.debug("rollbacking transaction");
-			conn.rollback();
+		try {
+			CONNECTIONS.get().rollback();
+		} catch (SQLException e) {
+			throw new DbException("Could not rollback", e);
 		}
 	}
 
 	public static void close() {
-		DefaultConnectionProvider conn = getCp();
-		if (conn != null) {
-			DbUtils.closeQuietly(conn.acquire());
-			CTXS.remove();
-		}
+		DbUtils.closeQuietly(CONNECTIONS.get());
+		CTXS.remove();
+		CONNECTIONS.remove();
 	}
 
 	public static DSLContext db() {
@@ -72,18 +69,32 @@ public class DbHelper {
 		return ctx;
 	}
 
-	private static DSLContext initCtx() {
+	public static Connection conn() {
+		Connection conn = CONNECTIONS.get();
+		if (conn == null) {
+			conn = initConn();
+		}
+		return conn;
+	}
+
+	private static Connection initConn() {
 		try {
+			long deb = System.nanoTime();
 			Connection conn = POOL.getConnection();
 			conn.setAutoCommit(false);
-			DefaultConnectionProvider dcp = new DefaultConnectionProvider(conn);
-			DSLContext ctx = DSL.using(dcp, CFG.getSqlDialect());
-			CTXS.set(ctx);
-			log.debug("new connection initialized");
-			return ctx;
-		} catch (Exception e) {
+			CONNECTIONS.set(conn);
+			long elapsed = (System.nanoTime() - deb) / 1000;
+			log.debug("new connection initialized for thread {}µs", elapsed);
+			return conn;
+		} catch (SQLException e) {
 			throw new DbException("Could not get connection from pool", e);
 		}
+	}
 
+	private static DSLContext initCtx() {
+			DefaultConnectionProvider dcp = new DefaultConnectionProvider(conn());
+			DSLContext ctx = DSL.using(dcp, CFG.getSqlDialect());
+			CTXS.set(ctx);
+			return ctx;
 	}
 }

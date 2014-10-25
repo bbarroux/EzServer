@@ -20,12 +20,14 @@ import org.slf4j.LoggerFactory;
 import com.google.common.io.BaseEncoding;
 
 public class SentryFilter implements Filter {
-	private static final Logger log = LoggerFactory.getLogger(SentryFilter.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(SentryFilter.class);
+	public static final String USER = "SentryUserAttrName";
 	private Identifier identifier;
 
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-	    throws IOException, ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response,
+			FilterChain chain) throws IOException, ServletException {
 		log.trace("entering");
 		Object user = null;
 		HttpServletRequest req = (HttpServletRequest) request;
@@ -35,9 +37,9 @@ public class SentryFilter implements Filter {
 			if (user != null) {
 				log.debug("User authenticated");
 				req.getSession(true).setAttribute("user", user);
-				((HttpServletResponse) response).sendRedirect(req.getRequestURI());
-			}
-			else {
+				((HttpServletResponse) response).sendRedirect(req
+						.getRequestURI());
+			} else {
 				log.warn("Unauthenticated access ");
 				((HttpServletResponse) response).sendRedirect("/");
 			}
@@ -62,7 +64,8 @@ public class SentryFilter implements Filter {
 
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
-		identifier = (Identifier) filterConfig.getServletContext().getAttribute("identifier");
+		identifier = (Identifier) filterConfig.getServletContext()
+				.getAttribute("identifier");
 	}
 
 	@Override
