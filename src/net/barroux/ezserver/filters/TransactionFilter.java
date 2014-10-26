@@ -8,8 +8,12 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+
+import net.barroux.ezserver.db.DbHelper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import static net.barroux.ezserver.db.DbHelper.*;
 
 public class TransactionFilter implements Filter {
@@ -20,6 +24,7 @@ public class TransactionFilter implements Filter {
 	    throws IOException, ServletException {
 		log.trace("entering");
 		try {
+			DbHelper.conn();
 			chain.doFilter(request, response);
 			commit();
 		} catch (Exception e) {

@@ -1,5 +1,6 @@
 package net.barroux.ezserver;
 
+import java.security.Security;
 import java.util.EnumSet;
 
 import javax.servlet.DispatcherType;
@@ -12,12 +13,12 @@ import net.barroux.ezserver.filters.SentryFilter.Identifier;
 import net.barroux.ezserver.filters.TransactionFilter;
 
 import org.bibeault.frontman.CommandBroker;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 /**
  * Main class for EzServer with Frontman framework.
  * 
@@ -111,6 +112,9 @@ public class EzServer {
 
 	public void start() throws Exception {
 		log.info("preparing server start on port {} ", port);
+		//For some reason, oracle jdbc driver won't let me connect if
+		//I'm using jdk instead of jre (which I need for jsp)...sigh
+		Security.addProvider(new BouncyCastleProvider());
 		Server server = new Server(port);
 
 		WebAppContext app = new WebAppContext(webContent + "/", "/" + context);
@@ -124,7 +128,7 @@ public class EzServer {
 		app.setExtraClasspath(classesDir);
 
 		EnumSet<DispatcherType> dts = EnumSet.of(DispatcherType.REQUEST);
-		app.addFilter(LogRequestFilter.class, "/*", dts);
+		app.addFilter(LogRequestFilter.class, "/cmd/*", dts);
 		if (dbConfig != null) {
 			DbHelper.init(dbConfig);
 			app.addFilter(TransactionFilter.class, "/cmd/*", dts);
