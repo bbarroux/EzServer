@@ -1,9 +1,14 @@
 package net.barroux.ezserver;
 
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.DispatcherType;
+import javax.servlet.Filter;
 
 import net.barroux.ezserver.db.DbConfig;
 import net.barroux.ezserver.db.DbHelper;
@@ -40,8 +45,10 @@ public class EzServer {
 	private String webContent = "WebContent";
 	private String classesDir = "build/bin";
 	private String viewsPath = "/WEB-INF/jsp";
+	private List<Class<? extends Filter>> filters = new ArrayList<>();
 	private DbConfig dbConfig;
 	private Identifier identifier;
+	private Map<String,Object> attributes;
 
 	/**
 	 * Initializing an EzServer with the only parameter without default.
@@ -68,7 +75,21 @@ public class EzServer {
 		this.port = port;
 		return this;
 	}
-
+	/**
+	 * Fluent setter for attributes to be added to servletContext
+	 */
+	public EzServer attributes(Map<String,Object>attributes) {
+		this.attributes = attributes;
+		return this;
+	}
+	/**
+	 * Fluent setter for filters to be added to webapp
+	 */
+	@SafeVarargs
+	public final EzServer filters(Class<? extends Filter>... filters) {
+		this.filters = Arrays.asList(filters);
+		return this;
+	}
 	/**
 	 * Fluent setter for application context path (defaults to root ("/"))
 	 */
@@ -114,6 +135,7 @@ public class EzServer {
 		log.info("preparing server start on port {} ", port);
 		//For some reason, oracle jdbc driver won't let me connect if
 		//I'm using jdk instead of jre (which I need for jsp)...sigh
+		//unless... bouncyCastle to the rescue!
 		Security.addProvider(new BouncyCastleProvider());
 		Server server = new Server(port);
 
@@ -123,20 +145,21 @@ public class EzServer {
 		    CommandBroker.class);
 		cmdBroker.setInitParameter("commandsPath", commandsPath);
 		cmdBroker.setInitParameter("viewsPath", viewsPath);
-
-		app.addServlet(cmdBroker, "/cmd/*");
+		String pathSpec = "/cmd/*";
+		app.addServlet(cmdBroker, pathSpec);
 		app.setExtraClasspath(classesDir);
 
 		EnumSet<DispatcherType> dts = EnumSet.of(DispatcherType.REQUEST);
-		app.addFilter(LogRequestFilter.class, "/cmd/*", dts);
+		app.addFilter(LogRequestFilter.class, pathSpec, dts);
 		if (dbConfig != null) {
 			DbHelper.init(dbConfig);
-			app.addFilter(TransactionFilter.class, "/cmd/*", dts);
+			app.addFilter(TransactionFilter.class, pathSpec, dts);
 		}
 		if (identifier != null) {
 			app.setAttribute("identifier", identifier);
-			app.addFilter(SentryFilter.class, "/cmd/*", dts);
+			app.addFilter(SentryFilter.class, pathSpec, dts);
 		}
+		filters.stream().forEach(f->app.addFilter(f, pathSpec, dts));
 
 		server.setHandler(app);
 		StopMonitor.sendStopCommand(port, 2000);
