@@ -24,6 +24,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * Main class for EzServer with Frontman framework.
  * 
@@ -38,135 +39,137 @@ import org.slf4j.LoggerFactory;
  */
 
 public class EzServer {
-	private static final Logger log = LoggerFactory.getLogger(EzServer.class);
-	private final String commandsPath;
-	private int port = 8765;
-	private String context = "";
-	private String webContent = "WebContent";
-	private String classesDir = "build/bin";
-	private String viewsPath = "/WEB-INF/jsp";
-	private List<Class<? extends Filter>> filters = new ArrayList<>();
-	private DbConfig dbConfig;
-	private Identifier identifier;
-	private Map<String,Object> attributes;
+   private static final Logger           log        = LoggerFactory.getLogger(EzServer.class);
+   private final String                  commandsPath;
+   private int                           port       = 8765;
+   private String                        context    = "";
+   private String                        webContent = "WebContent";
+   private String                        classesDir = "build/bin";
+   private String                        viewsPath  = "/WEB-INF/jsp";
+   private List<Class<? extends Filter>> filters    = new ArrayList<>();
+   private DbConfig                      dbConfig;
+   private Identifier                    identifier;
+   private Map<String, Object>           attributes;
 
-	/**
-	 * Initializing an EzServer with the only parameter without default.
-	 * 
-	 * @param commandsPath
-	 *          The base package for your frontman commands.
-	 */
-	public EzServer(String commandsPath) {
-		this.commandsPath = commandsPath;
-	}
+   /**
+    * Initializing an EzServer with the only parameter without default.
+    * 
+    * @param commandsPath
+    *           The base package for your frontman commands.
+    */
+   public EzServer(String commandsPath) {
+      this.commandsPath = commandsPath;
+   }
 
-	/**
-	 * Fluent setter for Server frontman viewsPath (defaults to /WEB-INF/jsp).
-	 */
-	public EzServer viewsPath(String viewsPath) {
-		this.viewsPath = viewsPath;
-		return this;
-	}
+   /**
+    * Fluent setter for Server frontman viewsPath (defaults to /WEB-INF/jsp).
+    */
+   public EzServer viewsPath(String viewsPath) {
+      this.viewsPath = viewsPath;
+      return this;
+   }
 
-	/**
-	 * Fluent setter for server port (defaults to 8765)
-	 */
-	public EzServer port(int port) {
-		this.port = port;
-		return this;
-	}
-	/**
-	 * Fluent setter for attributes to be added to servletContext
-	 */
-	public EzServer attributes(Map<String,Object>attributes) {
-		this.attributes = attributes;
-		return this;
-	}
-	/**
-	 * Fluent setter for filters to be added to webapp
-	 */
-	@SafeVarargs
-	public final EzServer filters(Class<? extends Filter>... filters) {
-		this.filters = Arrays.asList(filters);
-		return this;
-	}
-	/**
-	 * Fluent setter for application context path (defaults to root ("/"))
-	 */
-	public EzServer context(String context) {
-		this.context = context;
-		return this;
-	}
+   /**
+    * Fluent setter for server port (defaults to 8765)
+    */
+   public EzServer port(int port) {
+      this.port = port;
+      return this;
+   }
 
-	/**
-	 * Fluent setter for web content eclipse folder relative to project path
-	 * (defaults to "WebContent").
-	 */
-	public EzServer webContent(String webContent) {
-		this.webContent = webContent;
-		return this;
-	}
+   /**
+    * Fluent setter for attributes to be added to servletContext
+    */
+   public EzServer attributes(Map<String, Object> attributes) {
+      this.attributes = attributes;
+      return this;
+   }
 
-	/**
-	 * Fluent setter for eclipse classes output dir (defaults to "build/bin").
-	 */
-	public EzServer classesDir(String classesDir) {
-		this.classesDir = classesDir;
-		return this;
-	}
+   /**
+    * Fluent setter for filters to be added to webapp
+    */
+   @SafeVarargs
+   public final EzServer filters(Class<? extends Filter>... filters) {
+      this.filters = Arrays.asList(filters);
+      return this;
+   }
 
-	/**
-	 * Fluent setter for DbConfig.
-	 */
-	public EzServer dbConfig(DbConfig dbConfig) {
-		this.dbConfig = dbConfig;
-		return this;
-	}
+   /**
+    * Fluent setter for application context path (defaults to root ("/"))
+    */
+   public EzServer context(String context) {
+      this.context = context;
+      return this;
+   }
 
-	/**
-	 * Fluent setter for sentry identifier.
-	 */
-	public EzServer identifier(Identifier identifier) {
-		this.identifier = identifier;
-		return this;
-	}
+   /**
+    * Fluent setter for web content eclipse folder relative to project path
+    * (defaults to "WebContent").
+    */
+   public EzServer webContent(String webContent) {
+      this.webContent = webContent;
+      return this;
+   }
 
-	public void start() throws Exception {
-		log.info("preparing server start on port {} ", port);
-		//For some reason, oracle jdbc driver won't let me connect if
-		//I'm using jdk instead of jre (which I need for jsp)...sigh
-		//unless... bouncyCastle to the rescue!
-		Security.addProvider(new BouncyCastleProvider());
-		Server server = new Server(port);
+   /**
+    * Fluent setter for eclipse classes output dir (defaults to "build/bin").
+    */
+   public EzServer classesDir(String classesDir) {
+      this.classesDir = classesDir;
+      return this;
+   }
 
-		WebAppContext app = new WebAppContext(webContent + "/", "/" + context);
-		app.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
-		ServletHolder cmdBroker = new ServletHolder("CommandBroker",
-		    CommandBroker.class);
-		cmdBroker.setInitParameter("commandsPath", commandsPath);
-		cmdBroker.setInitParameter("viewsPath", viewsPath);
-		String pathSpec = "/cmd/*";
-		app.addServlet(cmdBroker, pathSpec);
-		app.setExtraClasspath(classesDir);
+   /**
+    * Fluent setter for DbConfig.
+    */
+   public EzServer dbConfig(DbConfig dbConfig) {
+      this.dbConfig = dbConfig;
+      return this;
+   }
 
-		EnumSet<DispatcherType> dts = EnumSet.of(DispatcherType.REQUEST);
-		app.addFilter(LogRequestFilter.class, pathSpec, dts);
-		if (dbConfig != null) {
-			DbHelper.init(dbConfig);
-			app.addFilter(TransactionFilter.class, pathSpec, dts);
-		}
-		if (identifier != null) {
-			app.setAttribute("identifier", identifier);
-			app.addFilter(SentryFilter.class, pathSpec, dts);
-		}
-		filters.stream().forEach(f->app.addFilter(f, pathSpec, dts));
+   /**
+    * Fluent setter for sentry identifier.
+    */
+   public EzServer identifier(Identifier identifier) {
+      this.identifier = identifier;
+      return this;
+   }
 
-		server.setHandler(app);
-		StopMonitor.sendStopCommand(port, 2000);
-		new StopMonitor(server, port).start();
+   public void start() throws Exception {
+      log.info("preparing server start on port {} ", port);
+      // For some reason, oracle jdbc driver won't let me connect if
+      // I'm using jdk instead of jre (which I need for jsp)...sigh
+      // unless... bouncyCastle to the rescue!
+      Security.addProvider(new BouncyCastleProvider());
+      Server server = new Server(port);
 
-		server.start();
-		log.info("Server started");
-	}
+      WebAppContext app = new WebAppContext(webContent + "/", "/" + context);
+      app.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
+      ServletHolder cmdBroker = new ServletHolder("CommandBroker", CommandBroker.class);
+      cmdBroker.setInitParameter("commandsPath", commandsPath);
+      cmdBroker.setInitParameter("viewsPath", viewsPath);
+      String pathSpec = "/cmd/*";
+      app.addServlet(cmdBroker, pathSpec);
+      app.setExtraClasspath(classesDir);
+
+      EnumSet<DispatcherType> dts = EnumSet.of(DispatcherType.REQUEST);
+      app.addFilter(LogRequestFilter.class, pathSpec, dts);
+      if (dbConfig != null) {
+         DbHelper.init(dbConfig);
+         app.addFilter(TransactionFilter.class, pathSpec, dts);
+      }
+      if (identifier != null) {
+         app.setAttribute("identifier", identifier);
+         app.addFilter(SentryFilter.class, pathSpec, dts);
+      }
+      filters.stream().forEach(f -> app.addFilter(f, pathSpec, dts));
+
+      server.setHandler(app);
+      StopMonitor.sendStopCommand(port, 2000);
+      new StopMonitor(server, port).start();
+
+      server.start();
+      log.info("Server started");
+   }
 
 }

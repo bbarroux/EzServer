@@ -15,31 +15,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LogRequestFilter implements Filter {
-	private static final Logger log = LoggerFactory.getLogger(LogRequestFilter.class);
-	private static final AtomicInteger COUNTER = new AtomicInteger(0);
+   private static final Logger        log     = LoggerFactory.getLogger(LogRequestFilter.class);
+   private static final AtomicInteger COUNTER = new AtomicInteger(0);
 
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-	    throws IOException, ServletException {
-		log.trace("entering");
-		int reqNr = COUNTER.incrementAndGet();
-		final long deb = System.currentTimeMillis();
-		final HttpServletRequest req = (HttpServletRequest) request;
-		if (log.isTraceEnabled()) {
-			log.trace("filtering {} - paramsMap : {}", req.getRequestURI(), req.getParameterMap());
-		}
-		chain.doFilter(req, response);
-		response.flushBuffer();
-		long total = System.currentTimeMillis() - deb;
-		log.info("{} - [{}]; total : {}ms", reqNr, req.getRequestURI(), total);
-	}
+   @Override
+   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+      log.trace("entering");
+      int reqNr = COUNTER.incrementAndGet();
+      final long deb = System.currentTimeMillis();
+      final HttpServletRequest req = (HttpServletRequest) request;
+      if (log.isTraceEnabled()) {
+         log.trace("filtering {} - paramsMap : {}", req.getRequestURI(), req.getParameterMap());
+      }
+      chain.doFilter(req, response);
+      response.flushBuffer();
+      long total = System.currentTimeMillis() - deb;
+      log.info("{} - [{}]; total : {}ms", reqNr, req.getRequestURI(), total);
+   }
 
-	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-	}
+   @Override
+   public void init(FilterConfig filterConfig) throws ServletException {
+   }
 
-	@Override
-	public void destroy() {
-	}
+   @Override
+   public void destroy() {
+   }
 
 }
