@@ -17,6 +17,7 @@ import net.barroux.ezserver.filters.SentryFilter;
 import net.barroux.ezserver.filters.SentryFilter.Identifier;
 import net.barroux.ezserver.filters.TransactionFilter;
 
+import org.apache.commons.lang.SystemUtils;
 import org.bibeault.frontman.CommandBroker;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.jetty.server.Server;
@@ -28,8 +29,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Main class for EzServer with Frontman framework.
  * 
- * Exemple usage :
- * {@code new EzServer("net.bx.commands").port(7777).context("myapp").start();}
+ * Exemple usage : {@code new EzServer("net.bx.commands").port(7777).context("myapp").start();}
  * 
  * Note that starting a server will trigger the shutdown of any other server
  * running on the same port. This is handy for quickly simulate a server
@@ -39,14 +39,15 @@ import org.slf4j.LoggerFactory;
  */
 
 public class EzServer {
-   private static final Logger           log        = LoggerFactory.getLogger(EzServer.class);
+   private static final Logger           log           = LoggerFactory.getLogger(EzServer.class);
+   private static final String           JETTY_DEFAULT = "org.eclipse.jetty.servlet.Default.";
    private final String                  commandsPath;
-   private int                           port       = 8765;
-   private String                        context    = "";
-   private String                        webContent = "WebContent";
-   private String                        classesDir = "build/bin";
-   private String                        viewsPath  = "/WEB-INF/jsp";
-   private List<Class<? extends Filter>> filters    = new ArrayList<>();
+   private int                           port          = 8765;
+   private String                        context       = "";
+   private String                        webContent    = "WebContent";
+   private String                        classesDir    = "build/bin";
+   private String                        viewsPath     = "/WEB-INF/jsp";
+   private List<Class<? extends Filter>> filters       = new ArrayList<>();
    private DbConfig                      dbConfig;
    private Identifier                    identifier;
    private Map<String, Object>           attributes;
@@ -151,6 +152,14 @@ public class EzServer {
       String pathSpec = "/cmd/*";
       app.addServlet(cmdBroker, pathSpec);
       app.setExtraClasspath(classesDir);
+      app.setInitParameter(JETTY_DEFAULT + "welcomeServlets", true + "");
+      // on renvoie sur le welcome servlet/page par un redirecthttp
+      app.setInitParameter(JETTY_DEFAULT + "redirectWelcome", true + "");
+      if (SystemUtils.IS_OS_WINDOWS) {
+         // On désactive l'utilisation des filemappedBuffer sur windows sans
+         // quoi les fichiers sous-jacent sont vérouillés)
+         app.setInitParameter(JETTY_DEFAULT + "useFileMappedBuffer", false + "");
+      }
 
       EnumSet<DispatcherType> dts = EnumSet.of(DispatcherType.REQUEST);
       app.addFilter(LogRequestFilter.class, pathSpec, dts);

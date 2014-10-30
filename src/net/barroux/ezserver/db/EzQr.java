@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 public final class EzQr {
    static final Logger                   log              = LoggerFactory.getLogger(EzQr.class);
    private static final QueryRunner      QR               = new FsQueryRunner();
-   private static final ExecutorService  EXECUTOR_SERVICE = Executors.newFixedThreadPool(5);
+   private static final ExecutorService  EXECUTOR_SERVICE = Executors.newFixedThreadPool(4);
    private static final AsyncQueryRunner AQR              = new AsyncQueryRunner(EXECUTOR_SERVICE, new FsQueryRunner(DbHelper.getDs()));
 
    private EzQr() {
@@ -68,6 +68,16 @@ public final class EzQr {
    public static <V> V query(String sql, ResultSetHandler<V> rsh, Object... params) {
       try {
          return QR.query(conn(), sql, rsh, params);
+      }
+      catch (SQLException s) {
+         log.error("Error while executing request " + s.getMessage(), s);
+         throw new DbException("Can't execute request " + sql, s);
+      }
+   }
+
+   public static <V> Future<V> queryAsync(String sql, ResultSetHandler<V> rsh, Object... params) {
+      try {
+         return AQR.query(sql, rsh, params);
       }
       catch (SQLException s) {
          log.error("Error while executing request " + s.getMessage(), s);
@@ -236,9 +246,8 @@ public final class EzQr {
     * <li>[req2[param2, 'strg2']]</li>
     * <li>etc..</li>
     * 
-    * Cette m�thode retourne un tableau d'entiers qui indique le nombres de
-    * lignes impact�es par les requ�tes. Ces valeurs sont retourn�es dans le
-    * m�me ordre que celui du tableau pass� en param�tre.
+    * Cette m�thode retourne un tableau d'entiers qui indique le nombres de lignes impact�es par les requ�tes. Ces valeurs sont retourn�es
+    * dans le m�me ordre que celui du tableau pass� en param�tre.
     * 
     * @param query
     * @param params
