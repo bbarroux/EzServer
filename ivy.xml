@@ -6,20 +6,30 @@
 
   <dependencies>
     <dependency org="jstl" name="jstl" rev="1.2"/>
-    <dependency org="org.eclipse.jetty" name="jetty-webapp" rev="9.2.3.v20140905"/>
-  	<dependency org="org.eclipse.jetty" name="jetty-jsp" rev="9.2.3.v20140905"/>
-
-    <dependency org="org.slf4j" name="slf4j-api" rev="1.7.5"/>
+    <dependency org="org.eclipse.jetty" name="jetty-servlet" rev="9.2.10.v20150310"/>
+    <dependency org="org.eclipse.jetty" name="jetty-webapp" rev="9.2.10.v20150310"/>
+    <dependency org="org.eclipse.jetty" name="jetty-jsp" rev="9.2.10.v20150310"/>
+    <dependency org="org.eclipse.jetty" name="jetty-xml" rev="9.2.10.v20150310"/>
+    <dependency org="org.eclipse.jetty.websocket" name="javax-websocket-server-impl" rev="9.2.10.v20150310"/>
     
-    <dependency org="com.google.guava" name="guava" rev="15.0"/>
-    <dependency org="net.sf.ehcache" name="ehcache" rev="2.7.4"/>
+    <dependency org="org.eclipse.jetty.websocket" name="websocket-api" rev="9.2.10.v20150310"/>
+    <dependency org="org.eclipse.jetty.websocket" name="websocket-common" rev="9.2.10.v20150310"/>
+    <dependency org="org.eclipse.jetty.websocket" name="websocket-servlet" rev="9.2.10.v20150310"/>
+    <dependency org="org.eclipse.jetty.websocket" name="websocket-server" rev="9.2.10.v20150310"/> 
+
+    
+    <dependency org="org.slf4j" name="slf4j-api" rev="1.7.12"/>
+    
+    
+    <dependency org="com.google.guava" name="guava" rev="18.0"/>
+    <dependency org="net.sf.ehcache" name="ehcache" rev="2.10.0"/>
     
     <dependency org="com.jolbox" name="bonecp" rev="0.8.0.RELEASE"/>
     <dependency org="org.postgresql" name="postgresql" rev="9.2-1003-jdbc4"/>
-    <dependency org="org.jooq" name="jooq-codegen" rev="3.2.0"/>
+    <dependency org="org.jooq" name="jooq-codegen" rev="3.6.1"/>
     <dependency org="commons-lang" name="commons-lang" rev="2.6" />
     <dependency org="commons-dbutils" name="commons-dbutils" rev="1.6" />
-    <dependency org="joda-time" name="joda-time" rev="2.3"/>
+    <dependency org="joda-time" name="joda-time" rev="2.7"/>
     <dependency org="org.bouncycastle" name="bcprov-jdk16" rev="1.46"/>
     
   </dependencies>

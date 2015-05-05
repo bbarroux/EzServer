@@ -9,6 +9,9 @@ import java.util.Map;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
+import javax.servlet.ServletException;
+import javax.websocket.DeploymentException;
+import javax.websocket.server.ServerContainer;
 
 import net.barroux.ezserver.db.DbConfig;
 import net.barroux.ezserver.db.DbHelper;
@@ -23,6 +26,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +52,7 @@ public class EzServer {
    private String                        classesDir    = "build/bin";
    private String                        viewsPath     = "/WEB-INF/jsp";
    private List<Class<? extends Filter>> filters       = new ArrayList<>();
+   private List<Class<?>>                webSockets    = new ArrayList<>();
    private DbConfig                      dbConfig;
    private Identifier                    identifier;
    private Map<String, Object>           attributes;
@@ -91,7 +96,7 @@ public class EzServer {
     */
    @SafeVarargs
    public final EzServer filters(Class<? extends Filter>... filters) {
-      this.filters = Arrays.asList(filters);
+      this.filters.addAll(Arrays.asList(filters));
       return this;
    }
 
@@ -121,6 +126,14 @@ public class EzServer {
    }
 
    /**
+    * Fluent setter for eclipse classes output dir (defaults to "build/bin").
+    */
+   public EzServer webSockets(Class<?>... webSockets) {
+      this.webSockets.addAll(Arrays.asList(webSockets));
+      return this;
+   }
+
+   /**
     * Fluent setter for DbConfig.
     */
    public EzServer dbConfig(DbConfig dbConfig) {
@@ -145,10 +158,12 @@ public class EzServer {
       Server server = new Server(port);
 
       WebAppContext app = new WebAppContext(webContent + "/", "/" + context);
+      server.setHandler(app);
+      setWebSockets(app);
+
       app.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
-      ServletHolder cmdBroker = new ServletHolder("CommandBroker", CommandBroker.class);
-      cmdBroker.setInitParameter("commandsPath", commandsPath);
-      cmdBroker.setInitParameter("viewsPath", viewsPath);
+      ServletHolder cmdBroker = getCommandBroker();
+
       String pathSpec = "/cmd/*";
       app.addServlet(cmdBroker, pathSpec);
       app.setExtraClasspath(classesDir);
@@ -173,12 +188,27 @@ public class EzServer {
       }
       filters.stream().forEach(f -> app.addFilter(f, pathSpec, dts));
 
-      server.setHandler(app);
       StopMonitor.sendStopCommand(port, 2000);
       new StopMonitor(server, port).start();
 
       server.start();
+      server.dump(System.out);
       log.info("Server started");
    }
 
+   private void setWebSockets(WebAppContext app) throws ServletException, DeploymentException {
+      if (!webSockets.isEmpty()) {
+         ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(app);
+         for (Class<?> webSocket : webSockets) {
+            wscontainer.addEndpoint(webSocket);
+         }
+      }
+   }
+
+   private ServletHolder getCommandBroker() {
+      ServletHolder cmdBroker = new ServletHolder("CommandBroker", CommandBroker.class);
+      cmdBroker.setInitParameter("commandsPath", commandsPath);
+      cmdBroker.setInitParameter("viewsPath", viewsPath);
+      return cmdBroker;
+   }
 }
